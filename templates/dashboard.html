@@ -1,0 +1,194 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h1 class="text-center mb-4">Patient Data Dashboard</h1>
+    <p class="text-center text-muted">This dashboard provides a visual summary of key patient data and model insights, helping you understand the factors influencing heart disease prediction.</p>
+    <hr class="my-4">
+
+    <div class="row">
+        <div class="col-12 text-center mb-4">
+            <h2>Data Distributions</h2>
+            <p class="text-muted">Explore the distribution of the dataset's target variable and how heart disease prevalence changes across different age groups.</p>
+        </div>
+
+        <div class="col-md-6 mb-4">
+            <div class="card h-100 shadow">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Heart Disease Distribution</h5>
+                    <canvas id="pieChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6 mb-4">
+            <div class="card h-100 shadow">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Heart Disease Count by Age Group</h5>
+                    <canvas id="barChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    <hr class="my-4">
+
+    <div class="row">
+        <div class="col-12 text-center mb-4">
+            <h2>Model Insights</h2>
+            <p class="text-muted">Understand which features the model considered most important in making a prediction.</p>
+        </div>
+        <div class="col-12 mb-4">
+            <div class="card h-100 shadow">
+                <div class="card-body text-center">
+                    <h5 class="card-title">Model Feature Importances</h5>
+                    <canvas id="featImpChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    <hr class="my-4">
+
+    <div class="row">
+        <div class="col-12 text-center mb-4">
+            <h2>Feature Explanations</h2>
+            <p class="text-muted">Learn about the medical features used by the model.</p>
+        </div>
+        <div class="col-md-4 mb-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title text-primary">Age & Sex</h5>
+                    <p class="card-text">Age is a significant risk factor for heart disease. The model also considers biological differences represented by the patient's sex.</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title text-primary">Chest Pain Type (cp)</h5>
+                    <p class="card-text">This feature categorizes the type of chest pain experienced by the patient, which is a critical symptom for diagnosis.</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title text-primary">Blood Pressure & Cholesterol</h5>
+                    <p class="card-text">The model uses resting blood pressure (trestbps) and serum cholesterol (chol) levels, both key indicators of heart health.</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title text-primary">Exercise & Heart Rate</h5>
+                    <p class="card-text">It analyzes the maximum heart rate achieved (thalach) and whether exercise-induced angina (exang) was present.</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title text-primary">ECG & ST Depression</h5>
+                    <p class="card-text">Resting electrocardiographic results (restecg) and ST depression induced by exercise (oldpeak) are used to assess heart function.</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4 mb-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-body">
+                    <h5 class="card-title text-primary">Vessel & Thallium Scans</h5>
+                    <p class="card-text">The number of major vessels colored by fluoroscopy (ca) and the results of the thallium stress test (thal) are key diagnostic features.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // Pie Chart
+    const pieCtx = document.getElementById('pieChart').getContext('2d');
+    const pieChart = new Chart(pieCtx, {
+        type: 'pie',
+        data: {
+            labels: {{ pie_labels | tojson }},
+            datasets: [{
+                label: 'Total Patients',
+                data: {{ pie_values | tojson }},
+                backgroundColor: ['#42a5f5', '#ef5350'],
+                hoverOffset: 4
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                title: {
+                    display: true,
+                    text: 'Target Distribution'
+                }
+            }
+        }
+    });
+
+    // Bar Chart for Age Groups
+    const barCtx = document.getElementById('barChart').getContext('2d');
+    const barChart = new Chart(barCtx, {
+        type: 'bar',
+        data: {
+            labels: {{ bar_labels | tojson }},
+            datasets: [{
+                label: 'Patients with Heart Disease',
+                data: {{ bar_data | tojson }},
+                backgroundColor: ['#66bb6a', '#ffb74d', '#26c6da', '#ab47bc', '#78909c'],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            },
+            plugins: {
+                title: {
+                    display: true,
+                    text: 'Heart Disease by Age Group'
+                }
+            }
+        }
+    });
+
+    // Feature Importances Bar Chart
+    const featImpCtx = document.getElementById('featImpChart').getContext('2d');
+    const featImpChart = new Chart(featImpCtx, {
+        type: 'bar',
+        data: {
+            labels: {{ feat_imp_labels | tojson }},
+            datasets: [{
+                label: 'Importance',
+                data: {{ feat_imp_data | tojson }},
+                backgroundColor: '#5c6bc0',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            scales: {
+                y: {
+                    beginAtZero: true
+                }
+            },
+            indexAxis: 'y', // Make the bars horizontal
+            plugins: {
+                title: {
+                    display: true,
+                    text: 'Model Feature Importances'
+                }
+            }
+        }
+    });
+</script>
+{% endblock %}

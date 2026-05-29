@@ -1,0 +1,87 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container py-5">
+    <div class="card shadow-lg border-0 p-5 mx-auto bg-white" id="referral-doc" style="max-width: 800px; border-top: 10px solid #002d72 !important;">
+        
+        <div class="d-flex justify-content-between mb-4 d-print-none">
+            <a href="{{ url_for('referrals') }}" class="btn btn-sm btn-outline-secondary">← Back</a>
+            <button onclick="window.print()" class="btn btn-sm btn-primary">Print Referral</button>
+        </div>
+
+        <div class="row mb-5">
+            <div class="col-8">
+                <h2 class="fw-bold text-primary mb-0">BIO-CORE AI</h2>
+                <p class="text-muted small">Diagnostic Decision Support System</p>
+            </div>
+            <div class="col-4 text-end border-start">
+                <p class="mb-0 small"><strong>Case ID:</strong> {{ data.case_id }}</p>
+                <p class="mb-0 small"><strong>Date:</strong> {{ data.date }}</p>
+            </div>
+        </div>
+
+        <div class="row mb-4">
+            <div class="col-6">
+                <p class="text-uppercase text-muted fw-bold x-small mb-1">To Clinical Dept:</p>
+                <h6 class="fw-bold">{{ data.hospital }}</h6>
+                <p class="small text-muted">Phone: {{ data.contact }}</p>
+            </div>
+            <div class="col-6 text-end">
+                <p class="text-uppercase text-muted fw-bold x-small mb-1">Subject Patient:</p>
+                <h6 class="fw-bold text-uppercase">{{ data.patient }}</h6>
+            </div>
+        </div>
+
+        <hr>
+
+        <div class="bg-light p-3 rounded mb-4 border">
+            <h6 class="fw-bold mb-2">AI Assessment Summary</h6>
+            <div class="row">
+                <div class="col-6">
+                    <p class="small mb-0">Diagnosis: <strong class="text-danger">{{ data.diagnosis }}</strong></p>
+                </div>
+                <div class="col-6 text-end">
+                    <p class="small mb-0">Confidence: <strong>{{ data.confidence }}%</strong></p>
+                </div>
+            </div>
+        </div>
+
+        <h6 class="fw-bold mt-4"><i class="fas fa-microscope text-primary me-2"></i>Recommended Confirmatory Tests</h6>
+        <div class="row g-2 mb-4">
+            {% for test in data.tests %}
+            <div class="col-6">
+                <div class="p-2 border rounded small bg-white d-flex align-items-center">
+                    <i class="fas fa-check-circle text-success me-2"></i> {{ test }}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        
+
+        {% if data.prep %}
+        <div class="alert alert-warning border-0 py-3">
+            <h6 class="fw-bold small mb-2"><i class="fas fa-info-circle me-2"></i>Patient Instructions</h6>
+            <ul class="mb-0 small">
+                {% for p in data.prep %}
+                <li>{{ p }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+
+        <div class="mt-5 pt-5 text-center border-top">
+            <p class="x-small text-muted">This document is electronically verified by the BIO-CORE AI Neural Engine.</p>
+            <p class="x-small fw-bold">VALID FOR ADMISSION CONSULTATION</p>
+        </div>
+    </div>
+</div>
+
+<style>
+    #referral-doc { font-family: 'Inter', sans-serif; }
+    .x-small { font-size: 0.75rem; }
+    @media print {
+        .d-print-none, .navbar { display: none !important; }
+        .card { box-shadow: none !important; border: none !important; margin: 0 !important; }
+        body { background: white !important; }
+    }
+</style>
+{% endblock %}

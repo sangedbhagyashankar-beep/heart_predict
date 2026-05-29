@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+
+{% block title %}Cardiac Risk Distributions{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="text-center mb-5">
+        <h1 class="fw-bold text-primary">Feature Distribution Analysis</h1>
+        <p class="lead text-muted">Comparative visualization of clinical markers across patient demographics.</p>
+        <div class="d-flex justify-content-center gap-2">
+            <span class="badge bg-danger">Heart Disease (Positive)</span>
+            <span class="badge bg-success">Healthy (Negative)</span>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-9">
+            <div class="card border-0 shadow-sm rounded-4 overflow-hidden">
+                <div class="card-header bg-white border-0 pt-4 px-4">
+                    <h5 class="fw-bold mb-0">Demographic Spread (Age vs. Diagnosis)</h5>
+                </div>
+                <div class="card-body p-4">
+                    {% if plot_html %}
+                        <div class="ratio ratio-16x9">
+                            <div>{{ plot_html | safe }}</div>
+                        </div>
+                    {% elif histogram_htmls %}
+                        <div class="row">
+                            {% for plot in histogram_htmls %}
+                                <div class="col-md-6 mb-4">
+                                    {{ plot | safe }}
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-chart-bar fa-3x text-light mb-3"></i>
+                            <p class="text-muted">No distribution data available. Please check if 'heart.csv' is loaded.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-3">
+            <div class="card border-0 shadow-sm rounded-4 bg-primary text-white h-100">
+                <div class="card-body p-4">
+                    <h5 class="fw-bold mb-3"><i class="fas fa-microscope me-2"></i>AI Insights</h5>
+                    <p class="small opacity-75">Our Random Forest model identifies <strong>Age</strong> and <strong>Max Heart Rate (thalach)</strong> as top predictors for cardiac health.</p>
+                    <hr class="bg-white">
+                    <ul class="list-unstyled small">
+                        <li class="mb-3">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <strong>Overlay Mode:</strong> Overlapping areas show common ranges where healthy and at-risk patients share similar vitals.
+                        </li>
+                        <li class="mb-3">
+                            <i class="fas fa-vial me-2"></i>
+                            <strong>Violin Plot:</strong> The top bar shows density—where most patients in this category fall.
+                        </li>
+                    </ul>
+                    <a href="{{ url_for('dashboard') }}" class="btn btn-light btn-sm w-100 mt-3">Return to Dashboard</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Styling to ensure Plotly charts fit perfectly in cards */
+    .js-plotly-plot {
+        border-radius: 8px;
+    }
+    .badge {
+        padding: 8px 16px;
+        border-radius: 50px;
+    }
+</style>
+{% endblock %}

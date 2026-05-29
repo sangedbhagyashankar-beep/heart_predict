@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container py-5">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm {% if is_positive %}bg-danger text-white{% else %}bg-success text-white{% endif %}" style="border-radius: 20px;">
+                <div class="card-body p-4 d-flex justify-content-between align-items-center">
+                    <div>
+                        <h2 class="fw-bold mb-0"><i class="fas fa-file-medical-alt me-2"></i>{{ prediction.prediction_result }}</h2>
+                        <p class="mb-0 opacity-75">Analysis Date: {{ prediction.timestamp.strftime('%d %B, %Y') }} | Case ID: #BC-{{ prediction.id }}</p>
+                    </div>
+                    <div class="text-end">
+                        <h3 class="mb-0">{{ prediction.confidence }}%</h3>
+                        <small class="text-uppercase fw-bold">AI Certainty</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-lg-4">
+            <div class="card shadow border-0 text-center p-4 mb-4" style="border-radius: 20px;">
+                <h6 class="fw-bold text-muted text-uppercase small">Cardiac Vitality Score</h6>
+                <div class="py-2">
+                    {{ gauge_html|safe }}
+                </div>
+                <p class="small text-muted mt-2">Score represents cardiovascular resilience based on neural patterns.</p>
+            </div>
+
+            <div class="card shadow border-0 p-4 mb-4 text-white text-center" style="border-radius: 20px; background: linear-gradient(135deg, #1a237e 0%, #3949ab 100%);">
+                <h6 class="text-uppercase small fw-bold opacity-75">Estimated Heart Age</h6>
+                <h1 class="display-3 fw-bold mb-0">{{ heart_age }}</h1>
+                <p class="small mb-2">Years Old</p>
+                <div class="badge bg-white text-primary rounded-pill px-3">Actual Age: {{ real_age }}</div>
+                {% if heart_age > real_age %}
+                <p class="mt-3 mb-0 small text-warning"><i class="fas fa-exclamation-triangle"></i> Exceeds chronological age.</p>
+                {% endif %}
+            </div>
+
+            <div class="card shadow border-0 p-4" style="border-radius: 20px; background: #f8f9fa;">
+                <h6 class="fw-bold mb-3 text-primary"><i class="fas fa-apple-alt me-2"></i>Dietary Roadmap</h6>
+                <ul class="list-unstyled mb-0">
+                    {% for item in diet_plan %}
+                    <li class="small mb-3 text-muted">
+                        <i class="fas fa-check-circle text-success me-2"></i>{{ item }}
+                    </li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+
+        <div class="col-lg-8">
+            <div class="card shadow border-0 p-4 mb-4" style="border-radius: 20px;">
+                <h5 class="fw-bold mb-4"><i class="fas fa-chart-line text-primary me-2"></i>Biometric Comparison</h5>
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-light text-muted small">
+                            <tr>
+                                <th>PARAMETER</th>
+                                <th>MEASURED</th>
+                                <th>REFERENCE</th>
+                                <th>STATUS</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for key, item in analysis.items() %}
+                            <tr>
+                                <td class="fw-bold small text-muted">{{ item.label }}</td>
+                                <td class="fw-bold">{{ item.val }}</td>
+                                <td>{{ item.med }}</td>
+                                <td>
+                                    {% if item.risk %}
+                                    <span class="badge bg-danger-soft text-danger px-3 rounded-pill">Deviation</span>
+                                    {% else %}
+                                    <span class="badge bg-success-soft text-success px-3 rounded-pill">Optimal</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="card shadow border-0 p-4 mb-4" style="border-radius: 20px;">
+                <h5 class="fw-bold mb-3"><i class="fas fa-pills text-primary me-2"></i>Therapeutic Categories</h5>
+                <p class="small text-muted mb-4">The following types of medications are typically discussed for your risk profile:</p>
+                <div class="row g-3">
+                    {% for med in med_info %}
+                    <div class="col-md-6">
+                        <div class="p-3 border rounded-3 bg-light h-100">
+                            <h6 class="fw-bold mb-1">{{ med.type }}</h6>
+                            <small class="text-primary d-block mb-2 fw-bold text-uppercase" style="font-size: 0.65rem;">{{ med.purpose }}</small>
+                            <p class="small text-muted mb-0">{{ med.desc }}</p>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                <div class="alert alert-warning mt-4 mb-0 small border-0" style="border-radius: 12px;">
+                    <i class="fas fa-info-circle me-2"></i> Consult a physician before starting any treatment.
+                </div>
+            </div>
+
+            <div class="card shadow border-0 p-4 text-white" style="border-radius: 20px; background: #212529;">
+                <div class="row align-items-center">
+                    <div class="col-md-7">
+                        <h5 class="fw-bold mb-1">Finalized Next Steps</h5>
+                        <p class="small opacity-75 mb-0">Present this AI screening to a cardiologist for diagnostic confirmation.</p>
+                    </div>
+                    <div class="col-md-5 text-md-end mt-3 mt-md-0">
+                        <a href="{{ url_for('referrals') }}" class="btn btn-primary rounded-pill px-4 shadow-sm">Find Centers</a>
+                        <button onclick="window.print()" class="btn btn-outline-light rounded-pill px-3 ms-2"><i class="fas fa-print"></i></button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .bg-danger-soft { background-color: rgba(220, 53, 69, 0.1); }
+    .bg-success-soft { background-color: rgba(25, 135, 84, 0.1); }
+    .display-3 { font-size: 4.5rem; }
+
+    @media print {
+        .btn, .navbar, footer, .no-print { display: none !important; }
+        body { background-color: white !important; }
+        .container { max-width: 100% !important; width: 100% !important; margin: 0 !important; }
+        .card { box-shadow: none !important; border: 1px solid #dee2e6 !important; break-inside: avoid; }
+        .bg-danger { background-color: #dc3545 !important; color: white !important; -webkit-print-color-adjust: exact; }
+        .bg-success { background-color: #198754 !important; color: white !important; -webkit-print-color-adjust: exact; }
+    }
+</style>
+{% endblock %}

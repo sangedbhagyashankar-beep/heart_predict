@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+
+{% block title %}Prediction Result{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-md-8 offset-md-2 text-center">
+            <div class="card shadow-lg p-4">
+                <h1 class="card-title">Prediction Complete!</h1>
+                <p class="lead mt-3">The model's prediction is: 
+                    <strong class="{% if 'Heart Disease' in prediction %}text-danger{% else %}text-success{% endif %}">
+                        {{ prediction }}
+                    </strong>
+                </p>
+                <p class="lead">With a confidence of: <strong>{{ confidence }}%</strong></p>
+
+                <hr class="my-4">
+
+                <h2 class="mb-4">Next Steps</h2>
+                <div class="alert alert-info" role="alert">
+                    Your prediction has been saved to your history.
+                    You can view a detailed report with plots and insights to better understand this result.
+                </div>
+
+                <a href="{{ url_for('report', prediction_id=last_prediction_id) }}" class="btn btn-primary btn-lg mt-3">View Detailed Report</a>
+                <a href="{{ url_for('home') }}" class="btn btn-secondary btn-lg mt-3">Make Another Prediction</a>
+                <a href="{{ url_for('history') }}" class="btn btn-outline-primary btn-lg mt-3">View History</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

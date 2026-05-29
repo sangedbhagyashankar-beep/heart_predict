@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% block title %}Interactive Plotly Plot{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-md-10 offset-md-1">
+            <div class="card shadow-lg p-4">
+                <h1 class="card-title text-center mb-4">Interactive Plotly Graph</h1>
+                <div id="plotly-plot" class="mt-4">
+                    {{ plot_html | safe }}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

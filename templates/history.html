@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+
+{% block title %}Prediction History{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h1 class="text-center mb-4">Your Prediction History</h1>
+    {% if predictions %}
+        <div class="list-group">
+            {% for pred in predictions %}
+            <div class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
+                <div>
+                    <h5 class="mb-1">
+                        <strong>{{ pred.prediction_result }}</strong>
+                        <a href="{{ url_for('report', prediction_id=pred.id) }}" class="badge bg-info text-white ms-2">View Report</a>
+                    </h5>
+                    <small>Made on: {{ pred.timestamp.strftime('%Y-%m-%d %H:%M') }}</small>
+                    <p class="mb-0">Confidence: {{ pred.confidence }}%</p>
+                    <button class="btn btn-link p-0" type="button" data-bs-toggle="collapse" data-bs-target="#collapse-{{ pred.id }}" aria-expanded="false">
+                        Show details
+                    </button>
+                    <div class="collapse mt-2" id="collapse-{{ pred.id }}">
+                        <p class="mb-0"><strong>Features:</strong></p>
+                        <pre>{{ pred.features_json }}</pre>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    {% else %}
+        <div class="alert alert-info text-center" role="alert">
+            You have no prediction history. <a href="{{ url_for('home') }}">Make a prediction now!</a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

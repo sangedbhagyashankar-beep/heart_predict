@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% block title %}Prediction Form{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="card shadow-lg p-4">
+                <h1 class="card-title text-center">Heart Disease Prediction</h1>
+                <p class="text-center text-muted">Enter the patient's data below to get a prediction.</p>
+                <hr>
+                <form action="/predict" method="post">
+                    <div class="row">
+                        {% for feature in feature_cols %}
+                            <div class="col-md-6 mb-3">
+                                <label for="{{ feature }}" class="form-label">{{ feature.replace('_', ' ').title() }}</label>
+                                <input type="text" class="form-control" id="{{ feature }}" name="{{ feature }}" required>
+                            </div>
+                        {% endfor %}
+                    </div>
+                    <div class="d-grid mt-4">
+                        <button type="submit" class="btn btn-primary btn-lg">Predict</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container py-5">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2 class="fw-bold text-primary"><i class="fas fa-hospital-user me-2"></i>Top Cardiology Referrals in India</h2>
+            <p class="text-muted">Based on your AI assessment, we recommend consulting these premier institutions for confirmatory diagnostics.</p>
+        </div>
+        <div class="col-md-4 text-md-end">
+            <span class="badge bg-info text-dark p-2">Current Case: {{ prediction.prediction_result if prediction else 'No Case Active' }}</span>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        {% for hospital in hospitals %}
+        <div class="col-lg-4 col-md-6">
+            <div class="card h-100 border-0 shadow-sm hospital-card">
+                <div class="card-header bg-white border-0 pt-4 px-4">
+                    <span class="badge bg-soft-primary text-primary text-uppercase mb-2">{{ hospital.tier }}</span>
+                    <h5 class="fw-bold mb-0">{{ hospital.name }}</h5>
+                    <p class="small text-muted mb-0"><i class="fas fa-map-marker-alt me-1"></i> {{ hospital.location }}</p>
+                </div>
+                <div class="card-body px-4">
+                    <div class="d-flex align-items-center mb-3 p-2 bg-light rounded">
+                        <div class="avatar-sm me-3">
+                            <i class="fas fa-user-md fa-2x text-secondary"></i>
+                        </div>
+                        <div>
+                            <p class="small fw-bold mb-0">Primary Consultant:</p>
+                            <p class="small mb-0">{{ hospital.doctor }}</p>
+                        </div>
+                    </div>
+                    <p class="small text-muted mb-3">{{ hospital.doctor_info }}</p>
+                    <div class="mb-3">
+                        <span class="small fw-bold">Specialty:</span>
+                        <span class="badge bg-white border text-dark fw-normal">{{ hospital.specialty }}</span>
+                    </div>
+                </div>
+                <div class="card-footer bg-white border-0 pb-4 px-4">
+                    <a href="{{ url_for('generate_referral', hospital_id=hospital.id) }}" class="btn btn-primary w-100 shadow-sm">
+                        <i class="fas fa-file-medical me-2"></i>Generate Referral Letter
+                    </a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<style>
+    /* Clinical Theme Variables */
+    :root {
+        --primary-blue: #002d72;
+        --soft-blue: #eef2f7;
+    }
+
+    .hospital-card {
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        border-radius: 15px;
+        overflow: hidden;
+    }
+
+    .hospital-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 1rem 3rem rgba(0,0,0,.1) !important;
+    }
+
+    .bg-soft-primary {
+        background-color: var(--soft-blue);
+    }
+
+    .text-primary {
+        color: var(--primary-blue) !important;
+    }
+
+    .btn-primary {
+        background-color: var(--primary-blue);
+        border: none;
+        padding: 10px;
+        font-weight: 500;
+    }
+
+    .btn-primary:hover {
+        background-color: #001d4d;
+    }
+
+    .avatar-sm {
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    /* Hospital Tier Badges */
+    .badge {
+        letter-spacing: 0.5px;
+        font-weight: 600;
+    }
+</style>
+{% endblock %}

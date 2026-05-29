@@ -1,0 +1,261 @@
+{% extends "base.html" %}
+
+{% block title %}Bio-Core Advanced Analytics{% endblock %}
+
+{% block content %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+
+<div class="container-fluid py-0 bg-black min-vh-100 overflow-hidden">
+    <div class="row g-0">
+        <div class="col-lg-3 p-4 bg-glass-dark border-end border-danger border-opacity-25 text-white" style="z-index: 10; height: 100vh;">
+            <div class="d-flex align-items-center mb-4 border-bottom border-secondary pb-3">
+                <div class="scan-line"></div>
+                <h5 class="fw-bold mb-0 tracking-tighter text-danger">CARDIAC-AI v2026</h5>
+            </div>
+
+            <div class="card bg-transparent border-secondary mb-4 overflow-hidden">
+                <div class="card-header x-small fw-bold text-info border-secondary py-1">LIVE ELECTROCARDIOGRAM</div>
+                <div class="card-body p-0">
+                    <canvas id="ekg-chart" width="300" height="80" style="width:100%"></canvas>
+                </div>
+            </div>
+
+            <div class="mb-4">
+                <label class="x-small text-muted d-block mb-1 text-uppercase">Hemodynamic Output</label>
+                <div class="row g-2">
+                    <div class="col-6">
+                        <div class="p-2 bg-dark rounded border border-secondary text-center">
+                            <div class="text-danger fw-bold h4 mb-0" id="hr-val">{{ stats.hr }}</div>
+                            <div class="x-small text-muted">BPM</div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="p-2 bg-dark rounded border border-secondary text-center">
+                            <div class="text-info fw-bold h4 mb-0">{{ stats.bp }}</div>
+                            <div class="x-small text-muted">mmHg</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mb-4">
+                <label class="x-small text-muted d-block mb-2">RENDER LAYERS</label>
+                <div class="form-check form-switch small mb-2">
+                    <input class="form-check-input" type="checkbox" id="autoRotate" checked onchange="controls.autoRotate = this.checked">
+                    <label class="form-check-label">Automatic Rotation</label>
+                </div>
+                <div class="form-check form-switch small mb-3">
+                    <input class="form-check-input" type="checkbox" id="internalView" onchange="toggleClipping(this.checked)">
+                    <label class="form-check-label">Cross-Section Mode</label>
+                </div>
+                <label class="x-small text-muted d-block mb-1">CLIPPING DEPTH</label>
+                <input type="range" class="form-range custom-range" id="clipSlider" min="-5" max="5" step="0.1" value="5" oninput="updateClip(this.value)">
+            </div>
+
+            <div class="mt-auto">
+                <div class="p-2 border border-secondary rounded bg-dark bg-opacity-50">
+                    <div class="x-small text-muted">DIAGNOSTIC STATUS</div>
+                    <div class="fw-bold {% if 'Detected' in stats.risk %}text-danger{% else %}text-success{% endif %}">
+                        {{ stats.risk | upper }}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-9 position-relative">
+            <div class="bg-grid"></div>
+            <div id="labels-overlay" class="pe-none"></div>
+            <div id="viewport-3d" style="width: 100%; height: 100vh;"></div>
+            
+            <div class="position-absolute bottom-0 end-0 p-5 text-end pe-none">
+                <div class="text-danger fw-bold x-small mb-1">ANATOMICAL AXIS: ORIENTED</div>
+                <div class="text-white small" id="part-detail" style="max-width: 300px;">
+                    Focus on any labeled part to view advanced clinical data.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Scope styles to this page */
+    .bg-black { background-color: #000 !important; }
+    .bg-glass-dark { background: rgba(8, 8, 8, 0.9); backdrop-filter: blur(15px); }
+    .bg-grid {
+        position: absolute; width: 100%; height: 100%;
+        background-image: linear-gradient(rgba(255, 0, 0, 0.05) 1px, transparent 1px), 
+                          linear-gradient(90deg, rgba(255, 0, 0, 0.05) 1px, transparent 1px);
+        background-size: 50px 50px; pointer-events: none; z-index: 0;
+    }
+    .scan-line { width: 5px; height: 20px; background: #ff2e2e; margin-right: 10px; animation: flicker 1s infinite; }
+    @keyframes flicker { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+    .pe-none { pointer-events: none; }
+    
+    .floating-label {
+        position: absolute; color: #fff; padding: 4px 12px; border: 1px solid #ff2e2e;
+        background: rgba(0,0,0,0.85); font-size: 10px; font-weight: 800; cursor: pointer;
+        text-transform: uppercase; white-space: nowrap; transition: 0.3s; pointer-events: auto;
+    }
+    .floating-label:hover { background: #ff2e2e; transform: scale(1.1) translate(-50%, -50%); }
+    .custom-range::-webkit-slider-thumb { background: #ff2e2e; }
+</style>
+
+<script>
+let scene, camera, renderer, controls, heartGroup, blueFlow, redFlow;
+let clipPlane = new THREE.Plane(new THREE.Vector3(0, 0, 1), 10);
+let clock = new THREE.Clock();
+
+// Get real user BPM from Flask context
+const userBPM = parseInt("{{ stats.hr }}") || 72;
+const pulseFrequency = (userBPM / 60) * 3.5; 
+
+function init() {
+    const container = document.getElementById('viewport-3d');
+    scene = new THREE.Scene();
+    camera = new THREE.PerspectiveCamera(35, container.clientWidth / container.clientHeight, 0.1, 1000);
+    camera.position.set(2, 4, 18);
+
+    renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setSize(container.clientWidth, container.clientHeight);
+    renderer.localClippingEnabled = true;
+    container.appendChild(renderer.domElement);
+
+    heartGroup = new THREE.Group();
+
+    // 1. TISSUE MESH
+    const tissueMat = new THREE.MeshStandardMaterial({ 
+        color: 0x9c1c1c, roughness: 0.2, metalness: 0.15,
+        clippingPlanes: [clipPlane], side: THREE.DoubleSide
+    });
+
+    const heartMesh = new THREE.Mesh(new THREE.ParametricGeometry((u, v, target) => {
+        u *= Math.PI; v *= 2 * Math.PI;
+        let x = 16 * Math.pow(Math.sin(v), 3);
+        let y = -(13 * Math.cos(v) - 5 * Math.cos(2*v) - 2 * Math.cos(3*v) - Math.cos(4*v));
+        let z = Math.sin(u) * (8 + Math.cos(v) * 4);
+        target.set(x * 0.08, y * 0.08, z * 0.08);
+    }, 64, 64), tissueMat);
+    heartMesh.rotation.z = 0.25;
+    heartGroup.add(heartMesh);
+
+    // 2. VESSELS
+    const aorta = new THREE.Mesh(new THREE.TorusGeometry(1.6, 0.4, 16, 64, Math.PI), new THREE.MeshStandardMaterial({color: 0x7a0000, clippingPlanes:[clipPlane]}));
+    aorta.position.set(-0.6, 2.4, -0.6); aorta.rotation.z = -Math.PI/3.5;
+    heartGroup.add(aorta);
+
+    const venaCava = new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.5, 5, 32), new THREE.MeshStandardMaterial({color: 0x1e3a8a, clippingPlanes:[clipPlane]}));
+    venaCava.position.set(2.2, 2.5, -1);
+    heartGroup.add(venaCava);
+
+    // 3. BLOOD FLOW PARTICLES
+    blueFlow = createFlow(0x3498db, 1.8, 2); 
+    redFlow = createFlow(0xff3333, -1.8, -1);
+    heartGroup.add(blueFlow, redFlow);
+
+    scene.add(heartGroup);
+
+    // 4. ANATOMICAL LABELS
+    const labels = [
+        { name: "Aorta", pos: new THREE.Vector3(-1.8, 4.2, 0), info: "Major artery delivering oxygen-rich blood to the systemic circuit." },
+        { name: "Right Atrium", pos: new THREE.Vector3(2.8, 1.2, 0.5), info: "Receives deoxygenated blood from the superior and inferior vena cava." },
+        { name: "Left Ventricle", pos: new THREE.Vector3(-1.8, -2.5, 1.2), info: "Primary pumping chamber; forces blood into the aorta." },
+        { name: "Superior Vena Cava", pos: new THREE.Vector3(2.8, 4.2, -1), info: "Large vein returning blood from the upper body to the heart." }
+    ];
+
+    labels.forEach(l => {
+        const div = document.createElement('div');
+        div.className = 'floating-label';
+        div.innerText = l.name;
+        div.onclick = () => document.getElementById('part-detail').innerText = l.info;
+        document.getElementById('labels-overlay').appendChild(div);
+        l.el = div;
+    });
+
+    scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+    const rimLight = new THREE.PointLight(0xff0000, 1.5);
+    rimLight.position.set(-10, 10, -5);
+    scene.add(rimLight);
+
+    controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.autoRotate = true;
+
+    animate(labels);
+    drawEKG();
+}
+
+function createFlow(color, x, y) {
+    const geo = new THREE.BufferGeometry();
+    const pts = [];
+    for(let i=0; i<250; i++) pts.push(x+(Math.random()-0.5), y+(Math.random()-0.5)*5, Math.random()*2);
+    geo.setAttribute('position', new THREE.Float32BufferAttribute(pts, 3));
+    return new THREE.Points(geo, new THREE.PointsMaterial({color: color, size: 0.1, transparent: true, opacity: 0.8}));
+}
+
+function animate(labels) {
+    requestAnimationFrame(() => animate(labels));
+    const t = clock.getElapsedTime();
+    
+    // Pulse animation synced to user BPM
+    const pulse = Math.pow(Math.sin(t * pulseFrequency), 2) * Math.exp(-Math.pow(Math.sin(t * pulseFrequency), 2) * 6);
+    heartGroup.scale.setScalar(1 - pulse * 0.15);
+
+    // Flow particles synced to pulse
+    [blueFlow, redFlow].forEach((sys, idx) => {
+        const pos = sys.geometry.attributes.position.array;
+        for(let i=1; i<pos.length; i+=3) {
+            const speed = 0.04 + (pulse * 0.25);
+            pos[i] += (idx === 0 ? -1 : 1) * speed;
+            if(pos[i] > 5) pos[i] = -5; else if(pos[i] < -5) pos[i] = 5;
+        }
+        sys.geometry.attributes.position.needsUpdate = true;
+    });
+
+    // Label positioning
+    labels.forEach(l => {
+        const v = l.pos.clone().applyMatrix4(heartGroup.matrixWorld).project(camera);
+        const rect = renderer.domElement.getBoundingClientRect();
+        l.el.style.transform = `translate(-50%, -50%) translate(${(v.x*0.5+0.5)*rect.width}px, ${(v.y*-0.5+0.5)*rect.height}px)`;
+        l.el.style.opacity = v.z < 1 ? 1 : 0;
+    });
+
+    controls.update();
+    renderer.render(scene, camera);
+}
+
+// EKG Sync
+const ctx = document.getElementById('ekg-chart').getContext('2d');
+let ekgOffset = 0;
+function drawEKG() {
+    ctx.clearRect(0, 0, 300, 80);
+    ctx.strokeStyle = '#00f2ff';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    
+    // EKG speed based on BPM
+    const beatInterval = 300 / (userBPM / 20); 
+
+    for(let x=0; x<300; x++) {
+        let y = 40 + Math.sin((x+ekgOffset)*0.1) * 2;
+        if(x % Math.floor(beatInterval) > Math.floor(beatInterval * 0.9)) y -= 35; // R-Peak
+        if(x === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+    ekgOffset += (userBPM / 30); // Scrolling speed tied to HR
+    requestAnimationFrame(drawEKG);
+}
+
+function updateClip(v) { clipPlane.constant = parseFloat(v); }
+function toggleClipping(on) { clipPlane.constant = on ? 0 : 10; }
+
+window.addEventListener('resize', () => {
+    const container = document.getElementById('viewport-3d');
+    camera.aspect = container.clientWidth / container.clientHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(container.clientWidth, container.clientHeight);
+});
+
+init();
+</script>
+{% endblock %}

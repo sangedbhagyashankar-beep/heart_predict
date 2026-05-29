@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block title %}Correlation Heatmap{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow-lg p-4 text-center">
+                <h1 class="card-title">Feature Correlation Heatmap</h1>
+                <p class="text-muted">This plot visualizes the correlation between all features in the dataset. Values close to +1 indicate a strong positive correlation, while values close to -1 indicate a strong negative correlation.</p>
+                {{ heatmap_html | safe }}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -11,7 +11,7 @@ import numpy as np
 import plotly.express as px
 import plotly.io as pio
 import plotly.graph_objects as go
-from fpdf import FPDF 
+from fpdf import FPDF
 
 # --- App Configuration ---
 app = Flask(__name__)
